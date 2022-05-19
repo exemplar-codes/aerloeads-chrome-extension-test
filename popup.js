@@ -12,11 +12,12 @@ async function getCompany(userPromise) {
     .then((_) => _.clone().json())
     .then((_) => {
       const companyValue = _.company;
-      company =
-        companyValue && companyValue[0] === "@"
-          ? companyValue?.substr(1)
-          : companyValue;
-      company ||= "";
+      if (companyValue) {
+        company =
+          companyValue && companyValue[0] === "@"
+            ? companyValue?.substr(1)
+            : companyValue;
+      }
       console.log(company);
     });
 }
@@ -47,14 +48,17 @@ btn.addEventListener("click", async (event) => {
   const userPromise = githubFetch(username);
   await getCompany(userPromise);
   await getFirstAndLastNames(userPromise);
-  // await fetch("https://localhost:3000/users/", {
-  //   method: "POST",
-  //   headers: {
-  //     Accept: "application/json",
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: [],
-  // });
+  await fetch("http://localhost:3000/users/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      first_name: first_name,
+      last_name: last_name,
+      company: company,
+    }),
+  });
 
   btn.textContent = "Saved";
   btn.setAttribute("disabled", true);
