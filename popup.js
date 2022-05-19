@@ -45,11 +45,15 @@ btn.addEventListener("click", async (event) => {
   if (username.trim() === "") return;
 
   const userPromise = githubFetch(username);
-  userPromise.then(async (response) => {
-    if (response.status <= 299) {
+  userPromise
+    .then(async (response) => {
+      if (response.status >= 400) {
+        btn.textContent = "Invalid username!";
+        return;
+      }
       await getCompany(userPromise);
       await getFirstAndLastNames(userPromise);
-      let postResponse = await fetch("http://localhost:3000/users/", {
+      fetch("http://localhost:3000/users/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -59,17 +63,20 @@ btn.addEventListener("click", async (event) => {
           last_name: last_name,
           company: company,
         }),
-      });
+      })
+        .then(() => {
+          btn.textContent = "Saved😃";
+        })
+        .catch(() => {
+          btn.textContent = "Save failed!";
+        });
+    })
+    .finally(() => {
+      btn.setAttribute("disabled", true);
       first_name = last_name = company = ""; // reset inputs
-      if (postResponse.status >= 200 && postResponse <= 299)
-        btn.textContent = "Saved😃";
-      else btn.textContent = "Save failed!";
-    } else {
-      btn.textContent = "Invalid username!";
-    }
-    btn.setAttribute("disabled", true);
-    setTimeout(() => {
-      (btn.textContent = "Save"), btn.removeAttribute("disabled");
-    }, 500);
-  });
+
+      setTimeout(() => {
+        (btn.textContent = "Save"), btn.removeAttribute("disabled");
+      }, 500);
+    });
 });
