@@ -7,7 +7,6 @@ function githubFetch(username) {
 }
 
 async function getCompany(userPromise) {
-  // console.log(userPromise);
   return userPromise
     .then((_) => _.clone().json())
     .then((_) => {
@@ -46,23 +45,31 @@ btn.addEventListener("click", async (event) => {
   if (username.trim() === "") return;
 
   const userPromise = githubFetch(username);
-  await getCompany(userPromise);
-  await getFirstAndLastNames(userPromise);
-  await fetch("http://localhost:3000/users/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      first_name: first_name,
-      last_name: last_name,
-      company: company,
-    }),
+  userPromise.then(async (response) => {
+    if (response.status <= 299) {
+      await getCompany(userPromise);
+      await getFirstAndLastNames(userPromise);
+      let postResponse = await fetch("http://localhost:3000/users/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name: first_name,
+          last_name: last_name,
+          company: company,
+        }),
+      });
+      first_name = last_name = company = ""; // reset inputs
+      if (postResponse.status >= 200 && postResponse <= 299)
+        btn.textContent = "Saved😃";
+      else btn.textContent = "Save failed!";
+    } else {
+      btn.textContent = "Invalid username!";
+    }
+    btn.setAttribute("disabled", true);
+    setTimeout(() => {
+      (btn.textContent = "Save"), btn.removeAttribute("disabled");
+    }, 500);
   });
-
-  btn.textContent = "Saved";
-  btn.setAttribute("disabled", true);
-  setTimeout(() => {
-    (btn.textContent = "Save"), btn.removeAttribute("disabled");
-  }, 500);
 });
