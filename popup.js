@@ -1,59 +1,64 @@
-// let btn = document.getElementById("getUser");
-// // Run on click
-// btn.addEventListener("click", async () => {
-//   window.open("https://www.google.com");
-// });
+let first_name = "",
+  last_name = "",
+  company = "";
 
-function linkedInFetch(username, mode = null) {
-  return fetch('https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=muhammad-sanjar-afaq&decorationId=com.linkedin.voyager.dash.deco.identity.profile.TopCardSupplementary-96' ||
-    `https://www.linkedin.com/voyager/api/identity/dash/profiles?q=memberIdentity&memberIdentity=${username}${
-      mode
-        ? ""
-        : `&decorationId= com.linkedin.voyager.dash.deco.identity.profile.TopCardSupplementary-96`
-    }`,
-    {
-      headers: {
-        accept: "application/vnd.linkedin.normalized+json+2.1",
-        "accept-language": "en-US,en;q=0.9",
-        "cache-control": "no-cache",
-        "csrf-token": "ajax:8984552914058854073",
-        pragma: "no-cache",
-        "sec-ch-ua":
-          '" Not A;Brand";v="99", "Chromium";v="101", "Google Chrome";v="101"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"macOS"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "no-cors",
-        "sec-fetch-site": "same-origin",
-        "x-li-deco-include-micro-schema": "true",
-        "x-li-lang": "en_US",
-        "x-li-page-instance":
-          "urn:li:page:d_flagship3_profile_view_base;mfoxiCQAS4eTep6PGjRxAw==",
-        "x-li-track":
-          '{"clientVersion":"1.10.4765","mpVersion":"1.10.4765","osName":"web","timezoneOffset":5.5,"timezone":"Asia/Calcutta","deviceFormFactor":"DESKTOP","mpName":"voyager-web","displayDensity":2,"displayWidth":2992,"displayHeight":1934}',
-        "x-restli-protocol-version": "2.0.0",
-      },
-      referrer: "https://www.linkedin.com/in/muhammad-sanjar-afaq/",
-      referrerPolicy: "strict-origin-when-cross-origin",
-      body: null,
-      method: "GET",
-      mode: "cors",
-      credentials: "include",
-    }
-  );
+function githubFetch(username) {
+  return fetch(`https://api.github.com/users/${username}`);
 }
 
-async function getCompany(username) {
-  return linkedInFetch(username, "work").then((mainObj) =>
-    console.log(mainObj.elements[0].profileTopPosition.elements[0].companyName)
-  );
+async function getCompany(userPromise) {
+  // console.log(userPromise);
+  return userPromise
+    .then((_) => _.clone().json())
+    .then((_) => {
+      const companyValue = _.company;
+      company =
+        companyValue && companyValue[0] === "@"
+          ? companyValue?.substr(1)
+          : companyValue;
+      company ||= "";
+      console.log(company);
+    });
 }
 
-async function getFirstAndLastNames(username) {
-  return linkedInFetch(username).then((mainObj) =>
-    console.log([mainObj.elements[0].firstName, mainObj.elements[0].lastName])
-  );
+async function getFirstAndLastNames(userPromise) {
+  return userPromise
+    .then((_) => _.clone().json())
+    .then((_) => {
+      const names = _.name.split(" ");
+      if (names.length === 1) first_name = names[0];
+      else {
+        (first_name = names.slice(0, -1).join(" ")),
+          (last_name = names[names.length - 1]);
+      }
+
+      console.log([first_name, last_name]);
+    });
 }
-let username = "muhammad-sanjar-afaq";
-// await getCompany(username);
-await getFirstAndLastNames(username);
+
+let btn = document.getElementById("getUser");
+
+// Run on click
+btn.addEventListener("click", async (event) => {
+  event.preventDefault();
+  const username = document.getElementsByTagName("input")[0].value;
+  if (username.trim() === "") return;
+
+  const userPromise = githubFetch(username);
+  await getCompany(userPromise);
+  await getFirstAndLastNames(userPromise);
+  // await fetch("https://localhost:3000/users/", {
+  //   method: "POST",
+  //   headers: {
+  //     Accept: "application/json",
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: [],
+  // });
+
+  btn.textContent = "Saved";
+  btn.setAttribute("disabled", true);
+  setTimeout(() => {
+    (btn.textContent = "Save"), btn.removeAttribute("disabled");
+  }, 500);
+});
